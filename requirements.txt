@@ -1,0 +1,73 @@
+# AI Safety and Red Teaming - Dependencies
+# ==========================================
+
+# Core LLM Providers
+openai>=1.0.0
+anthropic>=0.20.0
+google-generativeai>=0.3.0
+
+# Guardrails & Safety
+nemoguardrails>=0.9.0
+llama-guard>=0.1.0
+deepeval>=0.21.0
+guardrails-ai>=0.4.0
+langchain>=0.1.0
+langchain-community>=0.0.20
+
+# Evaluation Frameworks
+ragas>=0.1.0
+garak>=0.9.0
+
+# ML/NLP Libraries
+transformers>=4.35.0
+torch>=2.0.0
+tokenizers>=0.15.0
+sentence-transformers>=2.2.0
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Web Framework (for Falconz)
+gradio>=4.0.0
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
+# HTTP & API
+requests>=2.31.0
+httpx>=0.24.0
+aiohttp>=3.8.0
+
+# Data Processing
+pyyaml>=6.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Development
+jupyter>=1.0.0
+ipython>=8.12.0
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.5.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# Security Analysis
+tiktoken>=0.5.0  # Token counting
+chardet>=5.2.0   # Character encoding detection
+
+# Document Processing (for document injection testing)
+pypdf>=3.15.0
+python-docx>=0.8.11
+
+# Optional: Local model inference
+# Uncomment for local model testing
+# vllm>=0.2.0
+# llama-cpp-python>=0.2.0
