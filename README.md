@@ -1,9 +1,5 @@
 # AI Safety and Red Teaming - Code Repository
 
-<p align="center">
-  <img src="assets/banner.png" alt="AI Safety Banner" width="800"/>
-</p>
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![OWASP](https://img.shields.io/badge/OWASP-LLM%20Top%2010-orange.svg)](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
