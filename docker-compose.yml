@@ -1,0 +1,217 @@
+# AI Safety and Red Teaming - Docker Compose Configuration
+# =========================================================
+# Orchestrates multiple services for development and testing
+
+version: '3.9'
+
+services:
+  # ==========================================================================
+  # Development Environment
+  # ==========================================================================
+  dev:
+    build:
+      context: .
+      target: development
+    container_name: ai-safety-dev
+    volumes:
+      - .:/app
+      - dev-cache:/home/aisafety/.cache
+    ports:
+      - "8888:8888"  # Jupyter
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - .env
+    networks:
+      - ai-safety-network
+    profiles:
+      - dev
+
+  # ==========================================================================
+  # Jupyter Notebook Server
+  # ==========================================================================
+  jupyter:
+    build:
+      context: .
+      target: development
+    container_name: ai-safety-jupyter
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./datasets:/app/datasets
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN:-aisafety}
+    env_file:
+      - .env
+    networks:
+      - ai-safety-network
+
+  # ==========================================================================
+  # Falconz Red Teaming Web Application
+  # ==========================================================================
+  falconz:
+    build:
+      context: .
+      target: webapp
+    container_name: ai-safety-falconz
+    ports:
+      - "7860:7860"
+    environment:
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+    env_file:
+      - .env
+    networks:
+      - ai-safety-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Testing Service
+  # ==========================================================================
+  test:
+    build:
+      context: .
+      target: testing
+    container_name: ai-safety-test
+    volumes:
+      - .:/app
+      - test-results:/app/test-results
+    environment:
+      - PYTEST_ADDOPTS=--junitxml=/app/test-results/junit.xml
+    env_file:
+      - .env
+    networks:
+      - ai-safety-network
+    profiles:
+      - test
+
+  # ==========================================================================
+  # Redis Cache (for rate limiting and caching)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ai-safety-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - ai-safety-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - full
+
+  # ==========================================================================
+  # PostgreSQL Database (for logging and metrics)
+  # ==========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-safety-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-aisafety}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-aisafety_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-aisafety}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ai-safety-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aisafety}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - full
+
+  # ==========================================================================
+  # Prometheus Metrics (for monitoring)
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai-safety-prometheus
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - ai-safety-network
+    profiles:
+      - monitoring
+
+  # ==========================================================================
+  # Grafana Dashboard (for visualization)
+  # ==========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai-safety-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - ai-safety-network
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  ai-safety-network:
+    driver: bridge
+    name: ai-safety-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  dev-cache:
+    name: ai-safety-dev-cache
+  test-results:
+    name: ai-safety-test-results
+  redis-data:
+    name: ai-safety-redis-data
+  postgres-data:
+    name: ai-safety-postgres-data
+  prometheus-data:
+    name: ai-safety-prometheus-data
+  grafana-data:
+    name: ai-safety-grafana-data
+
+# =============================================================================
+# Usage Examples:
+# -----------------------------------------------------------------------------
+# Start Jupyter:         docker-compose up jupyter
+# Start Falconz Web:     docker-compose up falconz
+# Run Tests:             docker-compose --profile test up test
+# Full Stack:            docker-compose --profile full up -d
+# With Monitoring:       docker-compose --profile monitoring up -d
+# Development:           docker-compose --profile dev up dev
+#
+# Stop All:              docker-compose down
+# Stop + Remove Volumes: docker-compose down -v
+# View Logs:             docker-compose logs -f [service]
+# =============================================================================
